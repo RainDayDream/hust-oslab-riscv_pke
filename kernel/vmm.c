@@ -154,12 +154,17 @@ void *user_va_to_pa(pagetable_t page_dir, void *va) {
   // to its corresponding physical address, i.e., "pa". To do it, we need to walk
   // through the page table, starting from its directory "page_dir", to locate the PTE
   // that maps "va". If found, returns the "pa" by using:
-  // pa = PYHS_ADDR(PTE) + (va & (1<<PGSHIFT -1))
+  //pa = PYHS_ADDR(PTE) + (va & (1<<PGSHIFT -1));
   // Here, PYHS_ADDR() means retrieving the starting address (4KB aligned), and
   // (va & (1<<PGSHIFT -1)) means computing the offset of "va" inside its page.
   // Also, it is possible that "va" is not mapped at all. in such case, we can find
   // invalid PTE, and should return NULL.
-  panic( "You have to implement user_va_to_pa (convert user va to pa) to print messages in lab2_1.\n" );
+  //panic( "You have to implement user_va_to_pa (convert user va to pa) to print messages in lab2_1.\n" );
+  
+  uint64 pa = lookup_pa(page_dir,(uint64)va);
+  pa = pa + (((uint64)va) & ((1<<PGSHIFT) -1));
+  //uint64* pe=&pa;
+  return (void*)pa;
 
 }
 

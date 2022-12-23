@@ -56,7 +56,7 @@ uint64 sys_user_allocate_page() {
 // reclaim a page, indicated by "va". added @lab2_2
 //
 uint64 sys_user_free_page(uint64 va) {
-  user_vm_unmap((pagetable_t)current->pagetable, va, PGSIZE, 1);
+  user_vm_unmap((pagetable_t)current->pagetable, va, PGSIZE, 1); 
   return 0;
 }
 
@@ -76,7 +76,9 @@ ssize_t sys_user_yield() {
   // hint: the functionality of yield is to give up the processor. therefore,
   // we should set the status of currently running process to READY, insert it in
   // the rear of ready queue, and finally, schedule a READY process to run.
-  panic( "You need to implement the yield syscall in lab3_2.\n" );
+  current->status = READY;
+  insert_to_ready_queue( current );
+  schedule();
 
   return 0;
 }

@@ -195,6 +195,7 @@ int do_fork( process* parent)
         // DO NOT COPY THE PHYSICAL PAGES, JUST MAP THEM.
         //panic( "You need to implement the code segment mapping of child in lab3_1.\n" );
         
+        {
         uint64 pa = lookup_pa(parent->pagetable,parent->mapped_info[i].va);
         pa = pa + ((parent->mapped_info[i].va) & ((1<<PGSHIFT) -1));
         //sprint("before mp\n");
@@ -208,6 +209,7 @@ int do_fork( process* parent)
         child->mapped_info[child->total_mapped_region].seg_type = CODE_SEGMENT;
         child->total_mapped_region++;
         break;
+        }
     }
   }
 

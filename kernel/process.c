@@ -197,7 +197,7 @@ int do_fork( process* parent)
         
         uint64 pa = lookup_pa(parent->pagetable,parent->mapped_info[i].va);
         pa = pa + ((parent->mapped_info[i].va) & ((1<<PGSHIFT) -1));
-        sprint("before mp\n");
+        //sprint("before mp\n");
         user_vm_map(child->pagetable, parent->mapped_info[i].va,PGSIZE, pa,
          prot_to_type(PROT_EXEC | PROT_READ, 1));
          

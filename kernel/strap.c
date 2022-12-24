@@ -64,10 +64,18 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
       //panic( "You need to implement the operations that actually handle the page fault in lab2_3.\n" );
       
       {
-        void* pa = alloc_page();
+      //lab2_challenge1,Judge whether the current page missing exception is legal
+      //legal 
+        if(stval<=0x7ffff000&&stval>=(0x7ffff000-(4096*MAX_PAGE_FAULT_HANDLE)))
+        {
+          void* pa = alloc_page();
       
-        user_vm_map((pagetable_t)current->pagetable, stval, 1, (uint64)pa,
-         prot_to_type(PROT_WRITE | PROT_READ, 1));
+          user_vm_map((pagetable_t)current->pagetable, stval, 1, (uint64)pa,
+           prot_to_type(PROT_WRITE | PROT_READ, 1));
+        }
+        else{//illegal
+          panic("this address is not available!");
+        }
         break;
       }
     default:

@@ -196,20 +196,44 @@ int do_fork( process* parent)
         //panic( "You need to implement the code segment mapping of child in lab3_1.\n" );
         
         {
-        uint64 pa = lookup_pa(parent->pagetable,parent->mapped_info[i].va);
-        pa = pa + ((parent->mapped_info[i].va) & ((1<<PGSHIFT) -1));
-        //sprint("before mp\n");
-        user_vm_map(child->pagetable, parent->mapped_info[i].va,PGSIZE, pa,
-         prot_to_type(PROT_EXEC | PROT_READ, 1));
-         
-        // after mapping, register the vm region (do not delete codes below!)
+          uint64 pa = lookup_pa(parent->pagetable,parent->mapped_info[i].va);
+          pa = pa + ((parent->mapped_info[i].va) & ((1<<PGSHIFT) -1));
+          //sprint("before mp\n");
+          user_vm_map(child->pagetable, parent->mapped_info[i].va,PGSIZE, pa,
+           prot_to_type(PROT_EXEC | PROT_READ, 1));
+           
+          // after mapping, register the vm region (do not delete codes below!)
+          child->mapped_info[child->total_mapped_region].va = parent->mapped_info[i].va;
+          child->mapped_info[child->total_mapped_region].npages =
+            parent->mapped_info[i].npages;
+          child->mapped_info[child->total_mapped_region].seg_type = CODE_SEGMENT;
+          child->total_mapped_region++;
+          break;
+        }
+      case DATA_SEGMENT:{
+        //TODO(lab3_challenge1)
+        //copy parent's DATA_SEGMENT to child process's DATA_SEGMENT
+        
+        for(int j=0; j<parent->mapped_info[i].npages; j++)
+        {
+          uint64 parent_pa = lookup_pa(parent->pagetable,parent->mapped_info[i].va+j*PGSIZE);
+          if(parent_pa){
+            void* child_pa=alloc_page();
+            if(child_pa){
+              memcpy((void*)child_pa,(void*)parent_pa,PGSIZE);
+              //sprint("parent_pa:%x,child_pa:%x\n",parent_pa,(uint64)child_pa);
+              user_vm_map(child->pagetable, parent->mapped_info[i].va+j*PGSIZE,PGSIZE, (uint64)child_pa,prot_to_type(PROT_EXEC | PROT_READ |PROT_WRITE, 1));
+            }
+          }
+        }
+        
         child->mapped_info[child->total_mapped_region].va = parent->mapped_info[i].va;
-        child->mapped_info[child->total_mapped_region].npages =
-          parent->mapped_info[i].npages;
-        child->mapped_info[child->total_mapped_region].seg_type = CODE_SEGMENT;
+        child->mapped_info[child->total_mapped_region].npages =parent->mapped_info[i].npages;
+        child->mapped_info[child->total_mapped_region].seg_type = DATA_SEGMENT;
         child->total_mapped_region++;
         break;
-        }
+        
+      }
     }
   }
 
@@ -220,3 +244,60 @@ int do_fork( process* parent)
 
   return child->pid;
 }
+
+
+//implement wait syscall in kernel. added@lab3_challenge1
+//wait function:
+//pid=-1,return child process's pid
+//pid>0 wait child process
+//pid is illegal,return -1
+
+uint64 wait(uint64 pid)
+{
+  if(pid==-1)//look up for child process to return
+  {
+    int child=-1;
+    for(int j=0;j<NPROC;j++)
+    {
+      if(procs[j].parent == current)//child process
+      {
+        child=j;
+        if(procs[j].status == ZOMBIE)//child process is zombie
+        {
+          procs[j].status = FREE;
+          current->block_id = 0;
+          return procs[j].pid;
+        }
+      }
+    }
+    if(child==-1) return -1;//no child process
+    else //child process all running, parent process turns into blocked
+    {
+      current->block_id |= 1<<procs[child].pid;
+      current->status = BLOCKED;
+      return -2;
+    }
+  }
+  else if(pid>0&&pid<NPROC){//pid is legal
+    if(procs[pid].parent == current)
+    {
+      if(procs[pid].status == ZOMBIE)
+      {
+        procs[pid].status = FREE;
+        current->block_id = 0;
+        return procs[pid].pid;
+      }
+      else{
+        current->block_id |= 1<<procs[pid].pid;
+        current->status = BLOCKED;
+        return -2;
+      }
+    }
+    else return -1;//this pid is not child process
+  }
+  else return -1;//pid is illegal
+  
+  
+}
+
+

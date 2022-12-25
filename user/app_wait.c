@@ -12,6 +12,7 @@ int flag;
 int main(void) {
     flag = 0;
     int pid = fork();
+    printu("pid=%d\n",pid);
     if (pid == 0) {
         flag = 1;
         pid = fork();

@@ -6,6 +6,10 @@
 
 #define MAX_CMDLINE_ARGS 64
 
+
+//@lab1_challenge1. back_depth
+#define MAX_BACKTRACE_LENGTH 9
+
 // elf header structure
 typedef struct elf_header_t {
   uint32 magic;
@@ -37,6 +41,42 @@ typedef struct elf_prog_header_t {
   uint64 align;  /* Segment alignment */
 } elf_prog_header;
 
+
+// elf section header structure
+typedef struct elf_sect_header_t {
+  uint32 name;
+  uint32 type;
+  uint64 flags;
+  uint64 addr;
+  uint64 offset;
+  uint64 size;
+  uint32 link;
+  uint32 info;
+  uint64 addralign;
+  uint64 entsize;
+} elf_sect_header;
+
+
+// elf symbol table structure
+typedef struct elf_sym_t {
+  uint32   st_name;
+  uint8    st_info;      /* the type of symbol */
+  uint8    st_other;
+  uint16   st_shndx;
+  uint64   st_value;
+  uint64   st_size;
+} elf_sym;
+
+
+#define SHT_SYMTAB 2
+#define SHT_STRTAB 3
+#define STT_FUNC 2
+#define MAX_DEPTH 20
+#define STRTAB_MAX 400
+#define ELF64_ST_TYPE(info) ((info) & 0xf)
+
+
+
 #define ELF_MAGIC 0x464C457FU  // "\x7FELF" in little endian
 #define ELF_PROG_LOAD 1
 
@@ -59,5 +99,8 @@ elf_status elf_init(elf_ctx *ctx, void *info);
 elf_status elf_load(elf_ctx *ctx);
 
 void load_bincode_from_host_elf(process *p);
+
+//added @lab1_challenge1.
+long backtrace(int depth);
 
 #endif

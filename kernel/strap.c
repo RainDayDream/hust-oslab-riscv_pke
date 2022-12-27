@@ -66,7 +66,7 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
       {
       //lab2_challenge1,Judge whether the current page missing exception is legal
       //legal 
-        if(stval<=0x7ffff000&&stval>=(0x7ffff000-(4096*MAX_PAGE_FAULT_HANDLE)))
+        if(stval>=current->trapframe->regs.sp)
         {
           void* pa = alloc_page();
       

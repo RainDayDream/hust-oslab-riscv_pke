@@ -150,12 +150,12 @@ long backtrace(int depth){
 
   int i,off;
   //string table head address
-  uint64 strtab_addr = elfloader.ehdr.shoff + elfloader.ehdr.shstrndx*elfloader.ehdr.shentsize;
+  
   //claim string table header
   elf_sect_header strtab;
-  //get string table header's info
-  //if (elf_fpread(&elfloader,(void*)&strtab, sizeof(elf_sect_header), strtab_addr) != sizeof(elf_sect_header)) panic("string table header get failed!\n");
   
+  //string table head address
+  //get string table header's info
   for(i=0,off=elfloader.ehdr.shoff;i<elfloader.ehdr.shnum;i++,off+=sizeof(strtab))
   {
     if(elf_fpread(&elfloader,(void*)&strtab, sizeof(elf_sect_header), off) != sizeof(elf_sect_header)) panic("string table header get failed!\n");
@@ -165,13 +165,7 @@ long backtrace(int depth){
   //save string table
   char strtab_info[STRTAB_MAX];
   if (elf_fpread(&elfloader,(void*)strtab_info, sizeof(strtab_info), strtab.offset) != sizeof(strtab_info)) panic("string table get failed!\n");
-  //sprint("string table:%s\n",strtab_info);
-  /*for(i=0;i<STRTAB_MAX;i++)
-  {
-    sprint("%c",strtab_info[i]);
-    if(strtab_info[i]=='8') sprint("\n%d\n",i);
-  }
-  sprint("\n");*/
+  
   //symbol table header
   elf_sect_header symtab;
   //look up for symbol table header's info

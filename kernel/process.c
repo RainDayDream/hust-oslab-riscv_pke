@@ -45,6 +45,7 @@ void switch_to(process* proc) {
   proc->trapframe->kernel_satp = read_csr(satp);  // kernel page table
   proc->trapframe->kernel_trap = (uint64)smode_trap_handler;
 
+  proc->malloc_page_num = 1;
   // SSTATUS_SPP and SSTATUS_SPIE are defined in kernel/riscv.h
   // set S Previous Privilege mode (the SSTATUS_SPP bit in sstatus register) to User mode.
   unsigned long x = read_csr(sstatus);

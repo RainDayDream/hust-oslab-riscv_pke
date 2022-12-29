@@ -216,6 +216,7 @@ int do_fork( process* parent)
         
         for(int j=0; j<parent->mapped_info[i].npages; j++)
         {
+        //look up for parent process's data segment
           uint64 parent_pa = lookup_pa(parent->pagetable,parent->mapped_info[i].va+j*PGSIZE);
           if(parent_pa){
             void* child_pa=alloc_page();
@@ -296,8 +297,6 @@ uint64 wait(uint64 pid)
     else return -1;//this pid is not child process
   }
   else return -1;//pid is illegal
-  
-  
 }
 
 

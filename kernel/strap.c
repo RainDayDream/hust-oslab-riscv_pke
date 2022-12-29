@@ -9,9 +9,12 @@
 #include "pmm.h"
 #include "vmm.h"
 #include "util/functions.h"
-
+#include "memlayout.h"
 #include "spike_interface/spike_utils.h"
 
+
+
+//extern USER_STACK_TOP;
 //
 // handling the syscalls. will call do_syscall() defined in kernel/syscall.c
 //
@@ -64,9 +67,9 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
       //panic( "You need to implement the operations that actually handle the page fault in lab2_3.\n" );
       
       {
-      //lab2_challenge1,Judge whether the current page missing exception is legal
+      //added@lab2_challenge1.Judge whether the current page missing exception is legal
       //legal 
-        if(stval>=current->trapframe->regs.sp)
+        if(stval>=current->trapframe->regs.sp&&stval<=USER_STACK_TOP)
         {
           void* pa = alloc_page();
       

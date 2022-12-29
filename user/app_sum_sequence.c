@@ -22,7 +22,7 @@ uint64 sum_sequence(uint64 n, int *p) {
 
 int main(void) {
   // FIRST, we need a large enough "n" to trigger pagefaults in the user stack
-  uint64 n = 1024;
+  uint64 n = 512;
   
   // alloc a page size array(int) to store the result of every step
   // the max limit of the number is 4kB/4 = 1024

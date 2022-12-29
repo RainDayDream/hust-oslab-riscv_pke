@@ -197,7 +197,7 @@ long backtrace(int depth){
   //f8 address
   uint64 *cur_s0 = ((uint64*)current->trapframe->regs.s0+1);
   //sprint("cur_s0:%x\n",*cur_s0);
-  
+  uint64 place = *cur_s0;
   //sprint("depth:%d\n",depth);
   
 
@@ -206,12 +206,14 @@ long backtrace(int depth){
     //sprint("cur_s0:%x\n",*cur_s0);
     //int flag=0;
     for(int j=0;j<sym_num;j++){
-      if(symbols[j].st_value <= *cur_s0 && symbols[j].st_value+symbols[j].st_size>*cur_s0){
+      if(symbols[j].st_value <= place && symbols[j].st_value+symbols[j].st_size>place){
         off = symbols[j].st_name;
         sprint("%s\n",off+strtab_info,off);
         if(strcmp(strtab_info+off,"main")==0) return i+1;
         //sprint("st_size:%d\n",symbols[j].st_size);
         cur_s0 += 2 ;
+        place = symbols[j].st_value;
+        place+=symbols[j].st_size;
         //flag=1;
         break;
       }

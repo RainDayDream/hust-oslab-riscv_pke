@@ -76,3 +76,20 @@ int fork() {
 void yield() {
   do_user_call(SYS_user_yield, 0, 0, 0, 0, 0, 0, 0);
 }
+
+
+//added @lab3_challenge2
+int sem_new(int resource){
+  //printu("sem_new syscall\n");
+  return do_user_call(SYS_user_sem_new,resource,0,0,0,0,0,0);
+}
+
+void sem_P(int mutex){
+  //printu("sem_p syscall\n");
+  do_user_call(SYS_user_sem_P,mutex,0,0,0,0,0,0);
+}
+
+void sem_V(int mutex){
+  //printu("sem_v syscall\n");
+  do_user_call(SYS_user_sem_V,mutex,0,0,0,0,0,0);
+}

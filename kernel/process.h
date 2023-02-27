@@ -99,4 +99,20 @@ extern process* current;
 // address of the first free page in our simple heap. added @lab2_2
 extern uint64 g_ufree_page;
 
+
+
+//added @lab3_challenge2
+#define SEM_MAX 32
+//struct definition
+typedef struct semphore{
+  int signal;
+  process *waiting_queue;
+}semphore;
+//PV operation function
+long do_sem_new(int resource);
+void do_sem_P(int mutex);
+void do_sem_V(int mutex);
+void insert_to_waiting_queue(int mutex);
+
+
 #endif

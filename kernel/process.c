@@ -220,3 +220,74 @@ int do_fork( process* parent)
 
   return child->pid;
 }
+
+int cur=0;
+semphore signal[SEM_MAX];
+//PV operation function
+long do_sem_new(int resource)
+{
+  if(cur<SEM_MAX)
+  {
+    signal[cur].signal = resource;
+    return cur++;
+  }
+  panic("Too many signals!You should notice your process.\n");
+  return -1;
+}
+
+//P operation
+void do_sem_P(int mutex){
+  if(mutex<0||mutex>=SEM_MAX)
+  {
+    panic("Your signal is error!\n");
+    return;
+  }
+  signal[mutex].signal--;
+  if(signal[mutex].signal<0){
+    //insert current process to this signal's waiting list
+    insert_to_waiting_queue(mutex);
+    //schedule a ready process
+    schedule();
+  }
+  
+}
+
+//V operation
+void do_sem_V(int mutex){
+  if(mutex<0||mutex>=SEM_MAX)
+  {
+    panic("Your signal is error!\n");
+    return;
+  }
+  signal[mutex].signal++;
+  if(signal[mutex].signal<=0)
+  {
+    if(signal[mutex].waiting_queue!=NULL){
+      process* cur=signal[mutex].waiting_queue;
+      signal[mutex].waiting_queue=signal[mutex].waiting_queue->queue_next;
+      cur->status = READY;
+      insert_to_ready_queue(cur);
+    }
+  }
+  
+}
+
+//P operation's insert
+void insert_to_waiting_queue(int mutex){
+  if(signal[mutex].waiting_queue==NULL)
+  {
+    signal[mutex].waiting_queue = current;
+  }
+  else{
+    process *cur=signal[mutex].waiting_queue;
+    for(;cur->queue_next!=NULL;cur=cur->queue_next)
+    {
+      if(cur==current) return;
+    }
+    if(cur==current) return;
+    cur->queue_next=current;
+  }
+  
+  current->queue_next=NULL;
+  current->status=BLOCKED;
+}

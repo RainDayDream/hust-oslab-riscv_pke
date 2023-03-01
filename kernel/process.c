@@ -51,6 +51,16 @@ void switch_to(process* proc) {
   // set S Exception Program Counter (sepc register) to the elf entry pc.
   write_csr(sepc, proc->trapframe->epc);
 
+/*
+//debug for @lab1_challenge2 
+  addr_line *cur_line=current->line;
+  int i;
+  sprint("switch_line=%d\n",current->line_ind);
+  for(i=0;i<current->line_ind;i++,cur_line++)
+  {
+    sprint("i=%d,addr=%x\n",i,cur_line->addr);
+  }
+*/
   // return_to_user() is defined in kernel/strap_vector.S. switch to user mode with sret.
   return_to_user(proc->trapframe);
 }

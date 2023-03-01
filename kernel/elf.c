@@ -8,6 +8,8 @@
 #include "riscv.h"
 #include "spike_interface/spike_utils.h"
 
+
+
 typedef struct elf_info_t {
   spike_file_t *f;
   process *p;
@@ -104,6 +106,7 @@ void read_uint16(uint16 *out, char **off) {
 * and their code file name index of array "file"
 */
 void make_addr_line(elf_ctx *ctx, char *debug_line, uint64 length) {
+  //sprint("make_addr_line start\n");
    process *p = ((elf_info *)ctx->info)->p;
     p->debugline = debug_line;
     // directory name char pointer array
@@ -190,8 +193,8 @@ void make_addr_line(elf_ctx *ctx, char *debug_line, uint64 length) {
         }
 endop:;
     }
-    // for (int i = 0; i < p->line_ind; i++)
-    //     sprint("%p %d %d\n", p->line[i].addr, p->line[i].line, p->line[i].file);
+     //for (int i = 0; i < p->line_ind; i++)
+      //  sprint("%p %d %d\n", p->line[i].addr, p->line[i].line, p->line[i].file);
 }
 
 //
@@ -277,6 +280,12 @@ void load_bincode_from_host_elf(process *p) {
   // load elf. elf_load() is defined above.
   if (elf_load(&elfloader) != EL_OK) panic("Fail on loading elf.\n");
 
+
+  /*//added @lab1_challenge2 load debugline
+  if(load_debugline(&elfloader)!=EL_OK) panic("load debugline failed!\n");
+  make_addr_line(&elfloader,debugline,sizeof(debugline));
+  sprint("current process's debugline load successfully!\n");*/
+
   // entry (virtual, also physical in lab1_x) address
   p->trapframe->epc = elfloader.ehdr.entry;
 
@@ -284,26 +293,51 @@ void load_bincode_from_host_elf(process *p) {
   spike_file_close( info.f );
 
   sprint("Application program entry point (virtual address): 0x%lx\n", p->trapframe->epc);
+  
+    //added @lab1_challenge2 load debugline
+  if(load_debugline(&elfloader)!=EL_OK) panic("load debugline failed!\n");
+  //make_addr_line(&elfloader,debugline,sizeof(debugline));
+  //sprint("current process's debugline load successfully!\n");
 }
 
 
 
 
 
+//added @lab1_challenge2 | load debugline 
+elf_status load_debugline(elf_ctx *ctx)
+{
+  int i,off;
 
+  //claim string table header
+  elf_sect_header strtab;
+  //get string table header's info
+  off = ctx->ehdr.shoff;
+  off += sizeof(strtab) * (ctx->ehdr.shstrndx);
+  if(elf_fpread(ctx,(void*)&strtab, sizeof(strtab), off) != sizeof(strtab)) panic("string table header get failed!\n");
+  //save string table
+  static char strtab_info[STRTAB_MAX];
+  if (elf_fpread(ctx,(void*)strtab_info,strtab.size, strtab.offset) != strtab.size) panic("string table get failed!\n");
+  
+  //get .debug_line segment
+  elf_sect_header debugseg;
+  for(i=0,off=ctx->ehdr.shoff;i<ctx->ehdr.shnum;i++,off+=sizeof(debugseg))
+  {
+    if(elf_fpread(ctx,(void*)&debugseg, sizeof(elf_sect_header), off) != sizeof(elf_sect_header)) panic("debug header get failed!\n");
+    //sprint("i=%d,%s\n",i,strtab_info+debugseg.name);
+    if(strcmp((char*)(strtab_info+debugseg.name),".debug_line")==0) break;
+  }
 
+  if(i==ctx->ehdr.shnum){
+    panic("can't find debugline!\n");
+    return EL_ERR;
+  } 
 
-
-
-
-
-
-
-
-
-
-
-
-
+  //get debugline's information
+  static char debugline[DEBUGLINE_MAX];
+  if(elf_fpread(ctx,(void*)debugline,debugseg.size,debugseg.offset)!=debugseg.size) panic("debugline get failed!\n");
+  make_addr_line(ctx,debugline,debugseg.size);
+  return EL_OK;
+}
 
 

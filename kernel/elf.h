@@ -87,4 +87,12 @@ elf_status elf_load(elf_ctx *ctx);
 
 void load_bincode_from_host_elf(process *p);
 
+
+//added @lab1_challenge2
+#define SHT_STRTAB 3
+#define STRTAB_MAX 300
+#define DEBUGLINE_MAX 8000
+elf_status load_debugline(elf_ctx *ctx);
+
+
 #endif

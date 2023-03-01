@@ -280,12 +280,6 @@ void load_bincode_from_host_elf(process *p) {
   // load elf. elf_load() is defined above.
   if (elf_load(&elfloader) != EL_OK) panic("Fail on loading elf.\n");
 
-
-  /*//added @lab1_challenge2 load debugline
-  if(load_debugline(&elfloader)!=EL_OK) panic("load debugline failed!\n");
-  make_addr_line(&elfloader,debugline,sizeof(debugline));
-  sprint("current process's debugline load successfully!\n");*/
-
   // entry (virtual, also physical in lab1_x) address
   p->trapframe->epc = elfloader.ehdr.entry;
 

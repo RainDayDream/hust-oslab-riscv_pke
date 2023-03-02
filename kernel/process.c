@@ -15,6 +15,7 @@
 #include "vmm.h"
 #include "pmm.h"
 #include "memlayout.h"
+#include "util/functions.h"
 #include "spike_interface/spike_utils.h"
 
 //Two functions defined in kernel/usertrap.S
@@ -63,4 +64,160 @@ void switch_to(process* proc) {
   // return_to_user() is defined in kernel/strap_vector.S. switch to user mode with sret.
   // note, return_to_user takes two parameters @ and after lab2_1.
   return_to_user(proc->trapframe, user_satp);
+}
+
+
+//added @lab2_challenge2
+//allocate a block to user
+uint64 do_user_allocate(long n)
+{
+//check whether the size is legal
+  n=ROUNDUP(n,8);
+  if(n>PGSIZE) panic("better_allocate failed,because your size is too large!\n");
+//check whether the process has satisfied blocks
+  BLOCK *cur=current->free_start,*pre=current->free_start;
+  while(cur){
+    if(cur->size>=n) break;
+    pre=cur;
+    cur=cur->next;
+  }
+  //there is not a satisfied block,allocate a new page to get a new block
+  if(cur==NULL){
+    //allocate a new page
+    void* pa = alloc_page();
+    uint64 va = g_ufree_page;
+    g_ufree_page += PGSIZE;
+    user_vm_map((pagetable_t)current->pagetable, va, PGSIZE, (uint64)pa,prot_to_type(PROT_WRITE | PROT_READ, 1));
+    //turn this new page to a block
+    BLOCK* temp=(BLOCK*)pa;
+    temp->start=(uint64)pa+sizeof(BLOCK);
+    temp->size = PGSIZE-sizeof(BLOCK);
+    temp->va=va+sizeof(BLOCK);
+    temp->next=NULL;
+    //insert this block to line
+    if(pre==NULL){
+      current->free_start=temp;
+      cur=temp;
+    }
+    else{
+      if(pre->va+pre->size>=((pre->va)/PGSIZE+PGSIZE)){
+        pre->size+=PGSIZE;
+        cur=pre;
+      }
+      else{
+        pre->next=temp;
+        cur=temp;
+      } 
+    }
+    
+  }
+  //util this step,cur point to a satisfied block
+  
+//allocate a block and update free line
+  if(n+sizeof(BLOCK)<cur->size){
+    BLOCK *to_use=(BLOCK*)(cur->start+n);
+    to_use->start=cur->start+n+sizeof(BLOCK);
+    to_use->size=cur->size-n-sizeof(BLOCK);
+    to_use->va=cur->va+n+sizeof(BLOCK);
+    to_use->next=cur->next;
+    if(cur==current->free_start)
+      current->free_start=to_use;
+    else
+      pre->next=to_use;
+  }
+  else{
+    if(cur==current->free_start)
+      current->free_start=cur->next;
+    else
+      pre->next=cur->next;
+  }
+
+//update used line
+  cur->size=n;
+  cur->next=current->used_start;
+  current->used_start=cur;
+  return cur->va;
+}
+
+//free a block
+void do_user_free(uint64 va)
+{
+//find va's block
+  BLOCK *cur=current->used_start,*pre=current->free_start;
+  while(cur){
+    if(cur->va<=va&&cur->va+cur->size>va) break;
+    pre=cur;
+    cur=cur->next;
+  }
+  if(cur==NULL) panic("free failed,because the address you want to free is illegal!\n");
+//free,update used line
+  if(cur==current->used_start)
+    current->used_start=cur->next;
+  else
+    pre->next=cur->next;
+//update free line
+  //find the corrent position to insert
+  BLOCK *free_cur=current->free_start,*free_pre=current->used_start;
+  while(free_cur){
+    if(free_cur->va<=cur->va);
+    else break;
+    free_pre=free_cur;
+    free_cur=free_cur->next;
+  }
+  //insert this block into the last
+  if(free_cur==NULL){
+    if(free_pre==NULL)
+    {
+      cur->next=current->free_start;
+      current->free_start=cur;
+    }
+    else{
+      //merge too blocks
+      if(free_pre->va+free_pre->size>=cur->va){
+        free_pre->size+=cur->size;
+      }
+      else free_pre->next=cur,cur->next=NULL;//don't merge
+    }
+  }
+  else{
+    //insert the block into the first
+    if(free_cur==current->free_start){
+      if(cur->va+cur->size>=free_cur->va)//merge this and the next
+      {
+        cur->size+=free_cur->size;
+        cur->next=free_cur->next;
+        current->free_start=cur;
+      }
+      else{
+        cur->next=current->free_start;
+        current->free_start=cur;
+      }
+    }
+    else{//insert the block into the middle
+      if(free_pre->va+free_pre->size>=cur->va&&cur->va+cur->size>=free_cur->va)//merge three blocks
+      {
+        free_pre->size+=cur->size+free_cur->size;
+        free_pre->next=free_cur->next;
+      }
+      else if(cur->va+cur->size>=free_cur->va)//merge this and the next
+      {
+        cur->size+=free_cur->size;
+        cur->next=free_cur->next;
+        free_pre->next=cur;
+      }
+      else if(free_pre->va+free_pre->size>=cur->va)//merge this and pre
+      {
+        free_pre->size+=cur->size;
+      }
+      else//don't merge
+      {
+        free_pre->next=cur;
+        cur->next=free_cur;
+      }
+    }
+  }
+  //cur->next=current->free_start;
+  //current->free_start=cur;
+  
+  
 }
